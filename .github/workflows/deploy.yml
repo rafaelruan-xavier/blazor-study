@@ -22,8 +22,8 @@ jobs:
           dotnet-version: 9.0.x
       - name: Publish with dotnet
         run: dotnet publish --configuration Release --output build
-      - name: Change base-tag in index.html from / to repo name
-        run: sed -i 's|<base href="/" />|<base href="/${GITHUB_REPO_NAME}/" />|g' build/wwwroot/index.html
+      - name: Fix base href
+        run: sed -i "s|<base href=\"/\" />|<base href=\"/${{ github.event.repository.name }}/\" />|g" build/wwwroot/index.html
         env:
           GITHUB_REPO_NAME: ${{ github.event.repository.name }}
       - name: Commit wwwroot to GitHub Pages
