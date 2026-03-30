@@ -1,0 +1,77 @@
+﻿@page "/artist"
+@inject ArtistAPI ArtistAPI
+@inject NavigationManager NavigationManager
+
+<h2>Cadastrar Artista</h2>
+<EditForm Model="@artistDTOFactory" OnValidSubmit="PostAsync">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+
+    <div class="form-group">
+        <label>Nome</label>
+        <InputText @bind-Value="artistDTOFactory.Name" class="input" />
+    </div>
+    <div class="form-group">
+        <label>Biografia</label>
+        <InputTextArea @bind-Value="artistDTOFactory.Bio" class="input" Rows="4" />
+    </div>
+    <div class="form-group">
+        <label>Imagem do artista</label>
+        @if (!string.IsNullOrEmpty(fileImage))
+        {
+            <img src="@fileImage" class="img-preview"/>
+        }
+        <InputFile OnChange="UploadImage" accept="image/jpeg"></InputFile>
+    </div>
+
+    <br />
+
+    <button type="submit" class="btn"></button>
+</EditForm>
+
+
+@code {
+    private ArtistDTOFactory artistDTOFactory = new();
+    private string? fileImage;
+
+    private async Task<HttpResponseMessage> PostAsync()
+    {
+        ArtistaRequest createArtistDTO = artistDTOFactory.Create();
+        return await ArtistAPI.Post(createArtistDTO);
+    }
+
+    private async Task UploadImage(InputFileChangeEventArgs inputFileChangeEventArgs)
+    {
+        IBrowserFile file = inputFileChangeEventArgs.File;
+        string format = "image/jpeg";
+        IBrowserFile image = await file.RequestImageFileAsync(format, 200, 200); //Redimensiona a imagem, pois pode ser grande
+
+        using (Stream stream = image.OpenReadStream())
+        using (MemoryStream memoryStream = new MemoryStream()) // Precisamos de um MemoryStream para transformar em array
+        // de bytes [.ToArray()]
+        {
+            await stream.CopyToAsync(memoryStream);
+            string imageInBase64 = Convert.ToBase64String(memoryStream.ToArray());
+            fileImage = $"data:{format};base64,{imageInBase64}";
+            artistDTOFactory.ImageEncoded = fileImage;
+        }
+
+    }
+
+    public class ArtistDTOFactory
+    {
+        [Required(ErrorMessage = "Field is required!")]
+        public string Name { get; set; }
+        [Required(ErrorMessage = "Field is required!")]
+        public string Bio { get; set; }
+        public string? ImageEncoded { get; set; }
+
+        public ArtistaRequest Create()
+        {
+            return new ArtistaRequest(Name, Bio, ImageEncoded);
+        }
+
+    }
+
+}

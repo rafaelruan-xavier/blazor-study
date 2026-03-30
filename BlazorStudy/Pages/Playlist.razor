@@ -1,0 +1,97 @@
+﻿@page "/playlist"
+@inject MusicAPI MusicAPI
+@inject ILogger<Playlist> logger
+@inject IJSRuntime JS
+
+@if (musics is not null)
+{
+    <h2>PLAYLIST</h2>
+    <div class="playlist-header d-flex align-items-center mb-4 p-3 rounded">
+        <img src="images/cardArtista.png" class="playlist-cover me-4" alt="">
+        <div>
+            <h3 class="mb-1">Minha Playlist Favorita</h3>
+            <p class="mb-2" style="color: #b3b3b3;">Seleção das melhores músicas para você curtir!</p>
+            <span class="badge bg-primary">Pública</span>
+        </div>
+    </div>
+
+    <div class="playlist-tracks bg-light rounded p-3">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Número</th>
+                    <th>Música</th>
+                    <th>Artista</th>
+                    <th>Ano Lançamento</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var musica in musics)
+                {
+                    bool isPlaying = musica.Id.Equals(currentMusicID);
+                    <tr class="playlist-item @(isPlaying ? "playing-row" : null)" @onclick="() => TogglePlay(musica.Id)">
+                        <td>
+                            <span class="bi fa-icon-playstop @(isPlaying ? "bi-stop-fill" : "bi-play-fill")"/>
+                        </td>
+                        <td>@musica.Id</td>
+                        <td>@musica.Nome</td>
+                        <td>@musica.NomeArtista</td>
+                        <td>@musica.AnoLancamento</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <p>Carregando <div class="loader"></div></p>
+}
+
+
+@code {
+    private int? currentMusicID;
+    private ICollection<MusicaResponse>? musics;
+
+    protected override async Task OnInitializedAsync()
+    {
+        logger.LogInformation("Initializing data from API.");
+
+        try
+        {
+            musics = await MusicAPI.GetAsync();
+
+        }
+        catch(Exception e)
+        {
+            logger.LogError(e.Message);
+            await JS.InvokeVoidAsync("alert", e.Message);
+        }
+
+        if(musics is not null)
+        {
+            logger.LogInformation($"LOADED: {musics.Count}");
+        }
+    }
+
+    private async Task TogglePlay(int musicID)
+    {
+        if (currentMusicID.Equals(musicID))
+        {
+            currentMusicID = null;
+        }
+        else
+        {
+            currentMusicID = musicID;
+            await Task.Delay(5000);
+
+            if (currentMusicID.Equals(musicID))
+            {
+                currentMusicID = null;
+                //StateHasChanged();                
+            }
+        }
+
+    }
+}

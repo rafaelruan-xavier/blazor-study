@@ -1,0 +1,48 @@
+﻿@inject ArtistAPI artistAPI
+@page "/artists"
+
+@if (artists is not null)
+{
+    <h2>Artists Catalog</h2>
+    <div class="grid">
+        @foreach (var artistResponse in GetPage(_currentPage))
+        {
+            <CardArtist ArtistaResponse="artistResponse"></CardArtist>
+        }
+    </div>
+
+    <div class="pagination">
+        @for (int i=1; i <= _totalPages; i++)
+        {
+            var pagee = i;
+            <button class="btn m-1" @onclick="() => _currentPage = pagee">@pagee</button>
+        }
+    </div>
+}
+else
+{
+    <p>Carregando <div class="loader"></div></p>
+    
+}
+
+
+@code {
+    private ICollection<ArtistaResponse>? artists;    
+    private const int _artistsPerPage = 3;
+    private int _currentPage = 1;
+    private int _totalPages;
+
+
+    protected async override Task OnInitializedAsync()
+    {
+        artists = await artistAPI.GetAsync();
+        _totalPages = (int) Math.Ceiling((double) artists.Count / _artistsPerPage);
+    }
+
+    private IEnumerable<ArtistaResponse> GetPage(int page=1)
+    {    
+        return artists!
+        .Skip((page - 1) * _artistsPerPage)
+        .Take(_artistsPerPage);
+    }
+}
